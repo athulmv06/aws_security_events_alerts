@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: Events-Alert
+    Description: Alert When Events Happends Which Matched To The Event Pattern
+    Author: 2cloud    
+    Labels: ['events-alert', 'lambda', 'eventbridge']
+    SpdxLicenseId: MIT
+    LicenseUrl: ./LICENSE
+    ReadmeUrl: ./README.md
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://github.com/2cloudfze/AWSSecurityEventsAlert/invitations
+    
+Parameters:
+  CloudTrailName:
+    Type: String
+    Description: The EventBridge event pattern
+    Default: 'management-events'
+  S3BucketName:
+    Type: String
+    Description: The EventBridge event pattern
+    Default: 'aws-cloud-trails-logs-786'
+  SlackWebhookUrl:
+    Type: String
+    Description: The Slack webhook URL to notify
+  EventPattern:
+    Type: String
+    Description: The EventBridge event pattern
+    Default: '{"source": ["aws.iam"]}'
+
+Resources:
+  CloudTrailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+  CloudTrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref CloudTrailBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudTrailLogging
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !Sub "arn:aws:s3:::${S3BucketName}"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${CloudTrailName}"
+          - Sid: AllowCloudTrailPutObject
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub "arn:aws:s3:::${S3BucketName}/AWSLogs/${AWS::AccountId}/*"
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+                AWS:SourceArn: !Sub "arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${CloudTrailName}"
+  MyTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      TrailName: !Ref CloudTrailName
+      IsLogging: true
+      S3BucketName: !Ref CloudTrailBucket
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
+      EnableLogFileValidation: true
+  MyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: ./src/
+      Environment:
+        Variables:
+          SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
+  MyEventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern: !Ref EventPattern
+      Targets:
+        - Arn: !GetAtt MyFunction.Arn
+          Id: MyFunctionTarget
+  MyFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MyEventBridgeRule.Arn
+      FunctionName: !GetAtt MyFunction.Arn
