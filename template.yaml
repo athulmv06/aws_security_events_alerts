@@ -5,25 +5,31 @@ Metadata:
     Name: Events-Alert
     Description: Alert When Events Happends Which Matched To The Event Pattern
     Author: 2cloud    
-    Labels: ['events-alert', 'lambda', 'eventbridge']
-    SpdxLicenseId: MIT
-    LicenseUrl: ./LICENSE
+    Labels: ['events-alert', 'lambda', 'eventbridge', 'cloudtrail', 's3']
     ReadmeUrl: ./README.md
     SemanticVersion: 1.0.0
-    SourceCodeUrl: https://github.com/2cloudfze/AWSSecurityEventsAlert/invitations
+    SourceCodeUrl: https://github.com/AthulMv/cloud_security_events_alert/
     
 Parameters:
   CloudTrailName:
     Type: String
-    Description: The EventBridge event pattern
+    Description: The Cloudtrail name
     Default: 'management-events'
   S3BucketName:
     Type: String
-    Description: The EventBridge event pattern
+    Description: The s3 bucket name for cloudtrail
     Default: 'aws-cloud-trails-logs-786'
+  FunctionName:
+    Type: String
+    Description: The function name
+    Default: 'EventsAlert'
   SlackWebhookUrl:
     Type: String
     Description: The Slack webhook URL to notify
+  EventBridgeRuleName:
+    Type: String
+    Description: The Event bridge rule name
+    Default: 'EventsAlert'
   EventPattern:
     Type: String
     Description: The EventBridge event pattern
@@ -72,6 +78,7 @@ Resources:
   MyFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Ref FunctionName
       Handler: lambda_function.lambda_handler
       Runtime: python3.9
       CodeUri: ./src/
@@ -81,6 +88,7 @@ Resources:
   MyEventBridgeRule:
     Type: AWS::Events::Rule
     Properties:
+      Name: !Ref EventBridgeRuleName
       EventPattern: !Ref EventPattern
       Targets:
         - Arn: !GetAtt MyFunction.Arn
