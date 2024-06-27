@@ -3,21 +3,27 @@ Transform: 'AWS::Serverless-2016-10-31'
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: Events-Alert
-    Description: Alert When Events Happends Which Matched To The Event Pattern
-    Author: 2cloud    
+    Description: Alert When Events Happens Which Matched To The Event Pattern
+    Author: athulmv06
     Labels: ['events-alert', 'lambda', 'eventbridge', 'cloudtrail', 's3']
-    ReadmeUrl: ./README.md
     SemanticVersion: 1.0.0
-    SourceCodeUrl: https://github.com/AthulMv/cloud_security_events_alert/
-    
+    SourceCodeUrl: https://github.com/2cloudfze/AWSSecurityEventsAlert
+
 Parameters:
+  CreateCloudTrail:
+    Type: String
+    Description: Specify if CloudTrail needs to be created (YES/NO)
+    Default: 'YES'
+    AllowedValues:
+      - 'YES'
+      - 'NO'
   CloudTrailName:
     Type: String
-    Description: The Cloudtrail name
+    Description: Provide the name for the CloudTrail you want to create. If you don't want to create a CloudTrail, set this value to 'NIL'.
     Default: 'management-events'
   S3BucketName:
     Type: String
-    Description: The s3 bucket name for cloudtrail
+    Description: Provide the name for the S3 bucket to be used by CloudTrail. If you don't want to create a CloudTrail and the S3 bucket, set this value to 'NIL'.
     Default: 'aws-cloud-trails-logs-786'
   FunctionName:
     Type: String
@@ -28,20 +34,25 @@ Parameters:
     Description: The Slack webhook URL to notify
   EventBridgeRuleName:
     Type: String
-    Description: The Event bridge rule name
+    Description: The EventBridge rule name
     Default: 'EventsAlert'
   EventPattern:
     Type: String
     Description: The EventBridge event pattern
     Default: '{"source": ["aws.iam"]}'
 
+Conditions:
+  CreateCloudTrailCondition: !Equals [!Ref CreateCloudTrail, 'YES']
+
 Resources:
   CloudTrailBucket:
     Type: AWS::S3::Bucket
+    Condition: CreateCloudTrailCondition
     Properties:
       BucketName: !Ref S3BucketName
   CloudTrailBucketPolicy:
     Type: AWS::S3::BucketPolicy
+    Condition: CreateCloudTrailCondition
     Properties:
       Bucket: !Ref CloudTrailBucket
       PolicyDocument:
@@ -68,6 +79,7 @@ Resources:
                 AWS:SourceArn: !Sub "arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${CloudTrailName}"
   MyTrail:
     Type: AWS::CloudTrail::Trail
+    Condition: CreateCloudTrailCondition
     Properties:
       TrailName: !Ref CloudTrailName
       IsLogging: true

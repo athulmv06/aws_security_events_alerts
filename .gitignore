@@ -1,2 +1,4 @@
 # Ignore SAM configuration file
 samconfig.toml
+*.toml
+packaged.yaml
