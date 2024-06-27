@@ -7,7 +7,7 @@ Metadata:
     Author: athulmv06
     Labels: ['events-alert', 'lambda', 'eventbridge', 'cloudtrail', 's3']
     SemanticVersion: 1.0.0
-    SourceCodeUrl: https://github.com/2cloudfze/AWSSecurityEventsAlert
+    SourceCodeUrl: https://github.com/athulmv06/aws_security_events_alerts
 
 Parameters:
   CreateCloudTrail:
@@ -27,14 +27,14 @@ Parameters:
     Default: 'aws-cloud-trails-logs-786'
   FunctionName:
     Type: String
-    Description: The function name
+    Description: The name of Lambda function
     Default: 'EventsAlert'
   SlackWebhookUrl:
     Type: String
-    Description: The Slack webhook URL to notify
+    Description: Mention the Slack webhook URL to notify
   EventBridgeRuleName:
     Type: String
-    Description: The EventBridge rule name
+    Description: The EventBridge Rule name
     Default: 'EventsAlert'
   EventPattern:
     Type: String
