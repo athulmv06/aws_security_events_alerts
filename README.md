@@ -35,7 +35,7 @@ This AWS Serverless Application Model (SAM) application is designed to send aler
 1. **Clone the Repository**:
 
 ```
-   git clone https://github.com/athulmv06/aws_security_events_alerts.git
+git clone https://github.com/athulmv06/aws_security_events_alerts.git
 ```
 2. **Navigate to the Project Directory**:
 ```
